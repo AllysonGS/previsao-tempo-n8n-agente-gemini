@@ -1,0 +1,197 @@
+{
+  "name": "Workflow - Previsão Tempo",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "id": "b5d3522d-6815-4e9b-b2ea-0114534b7ba1",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "cityName": "={{ $json.city}}"
+      },
+      "type": "n8n-nodes-base.openWeatherMap",
+      "typeVersion": 1,
+      "position": [208, 0],
+      "id": "93eb7872-7da8-4d4b-b4f6-bcb1385302d4",
+      "name": "Pega dados previsão.",
+      "credentials": {
+        "openWeatherMapApi": {
+          "id": "REDACTED",
+          "name": "OpenWeatherMap account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Coloque os parâmentros que eu enviar em um campo chamado query.\n\nGaranta que esse campo seja uma string.\n\nweather_description:{{ $json.weather[0].description }}\ntemp: {{ $json.main.temp }}\nhumidity: {{ $json.main.humidity }}\nwind_speed:{{ $json.wind.speed }}\ncity:{{ $json.name }}\n\nNão precisa incluir nada na mensagem além do que foi pedido acima."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [416, 0],
+      "id": "478cf356-720a-49c1-a47a-7dca1dfee8ca",
+      "name": "Extrai os dados da Previsão",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "REDACTED",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c739e55c-76db-4746-8de6-33dbf6deb0c2",
+              "name": "content.parts[1].text",
+              "value": "={{ $json.content.parts[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1120, 0],
+      "id": "34846f27-4432-4524-94ee-1254e7ed5314",
+      "name": "Resposta simplificada"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{ $json.content.parts[0].text }}",
+              "role": "model"
+            },
+            {
+              "content": "=Converta o contentpara o idioma português br, usando tom amigavel.\n\nInsira emojis para descrever a previsão do tempo de forma mais clara.\n",
+              "role": "model"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [768, 0],
+      "id": "3a5c4138-327e-4e67-85ca-c9e7a9e07b33",
+      "name": "Resposta de Saída",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "REDACTED",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "city"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [-16, 192],
+      "id": "132d40a2-a51c-400e-97ae-bc93628a11b6",
+      "name": "When Executed by Another Workflow"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Pega dados previsão.",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pega dados previsão.": {
+      "main": [
+        [
+          {
+            "node": "Extrai os dados da Previsão",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrai os dados da Previsão": {
+      "main": [
+        [
+          {
+            "node": "Resposta de Saída",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resposta de Saída": {
+      "main": [
+        [
+          {
+            "node": "Resposta simplificada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Pega dados previsão.",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  ],
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c2e88bc4-5493-46bf-8b4b-848a0f45f22b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "REDACTED"
+  },
+  "id": "REDACTED",
+  "tags": []
+}
